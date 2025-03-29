@@ -172,8 +172,8 @@ void DG_SleepMs(uint32_t ms)
 
 uint32_t DG_GetTicksMs()
 {
-    static uint32_t ms = 0;
-    ms += 100;
+    ((volatile uint8_t*)(RTC_FLAG_ADDR))[0] = 1;
+    uint32_t ms = ((uint32_t*)(RTC_DATA_ADDR))[0];
 
     return ms;
 }
