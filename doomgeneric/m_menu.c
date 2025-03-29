@@ -502,6 +502,7 @@ menu_t  SaveDef =
 //
 void M_ReadSaveStrings(void)
 {
+#ifndef USE_VFS
     FILE   *handle;
     int     i;
     char    name[256];
@@ -521,6 +522,7 @@ void M_ReadSaveStrings(void)
 	fclose(handle);
 	LoadMenu[i].status = 1;
     }
+#endif
 }
 
 

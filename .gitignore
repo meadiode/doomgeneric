@@ -9,4 +9,7 @@
 Debug/
 Release/
 Build/
-doomgeneric
+doomgeneric/build
+doomgeneric/doomrv.elf
+doomgeneric/doomrl
+doomgeneric/wads/*

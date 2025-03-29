@@ -1547,6 +1547,7 @@ void G_LoadGame (char* name)
 
 void G_DoLoadGame (void) 
 {
+#ifndef USE_VFS
     int savedleveltime;
 	 
     gameaction = ga_nothing; 
@@ -1583,7 +1584,8 @@ void G_DoLoadGame (void)
 	I_Error ("Bad savegame");
 
     fclose(save_stream);
-    
+#endif
+
     if (setsizeneeded)
     	R_ExecuteSetViewSize ();
     
@@ -1609,6 +1611,7 @@ G_SaveGame
 
 void G_DoSaveGame (void) 
 { 
+#ifndef USE_VFS
     char *savegame_file;
     char *temp_savegame_file;
     char *recovery_savegame_file;
@@ -1679,7 +1682,7 @@ void G_DoSaveGame (void)
     M_StringCopy(savedescription, "", sizeof(savedescription));
 
     players[consoleplayer].message = DEH_String(GGSAVED);
-
+#endif
     // draw the pattern into the back screen
     R_FillBackScreen ();	
 } 

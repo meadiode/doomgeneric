@@ -47,6 +47,7 @@
 #include "v_video.h"
 #include "w_wad.h"
 #include "z_zone.h"
+#include "vfs.h"
 
 //
 // Create a directory
@@ -54,10 +55,14 @@
 
 void M_MakeDirectory(char *path)
 {
+#ifndef USE_VFS
+
 #ifdef _WIN32
     mkdir(path);
 #else
     mkdir(path, 0755);
+#endif
+
 #endif
 }
 
@@ -65,6 +70,7 @@ void M_MakeDirectory(char *path)
 
 boolean M_FileExists(char *filename)
 {
+#ifndef USE_VFS
     FILE *fstream;
 
     fstream = fopen(filename, "r");
@@ -81,11 +87,25 @@ boolean M_FileExists(char *filename)
 
         return errno == EISDIR;
     }
+#else
+    VFS_FILE *fstream = vfs_open(filename, "r");
+
+    if (fstream != NULL)
+    {
+        vfs_close(fstream);
+        return true;
+    }
+
+    return false;
+
+#endif
 }
 
 //
 // Determine the length of an open file.
 //
+
+#ifndef USE_VFS
 
 long M_FileLength(FILE *handle)
 { 
@@ -105,12 +125,36 @@ long M_FileLength(FILE *handle)
     return length;
 }
 
+#else
+
+long M_FileLength(VFS_FILE *handle)
+{ 
+    long savedpos;
+    long length;
+
+    // save the current position in the file
+    savedpos = vfs_tell(handle);
+    
+    // jump to the end and find the length
+    vfs_seek(handle, 0, SEEK_END);
+    length = vfs_tell(handle);
+
+    // go back to the old location
+    vfs_seek(handle, savedpos, SEEK_SET);
+
+    return length;
+}
+
+
+#endif
+
 //
 // M_WriteFile
 //
 
 boolean M_WriteFile(char *name, void *source, int length)
 {
+#ifndef USE_VFS
     FILE *handle;
     int	count;
 	
@@ -126,6 +170,10 @@ boolean M_WriteFile(char *name, void *source, int length)
 	return false;
 		
     return true;
+
+#else
+    return false;
+#endif
 }
 
 
@@ -135,6 +183,8 @@ boolean M_WriteFile(char *name, void *source, int length)
 
 int M_ReadFile(char *name, byte **buffer)
 {
+#ifndef USE_VFS
+
     FILE *handle;
     int	count, length;
     byte *buf;
@@ -157,6 +207,33 @@ int M_ReadFile(char *name, byte **buffer)
 		
     *buffer = buf;
     return length;
+#else
+    VFS_FILE *handle;
+    int count, length;
+    byte *buf;
+    
+    handle = vfs_open(name, "r");
+    if (handle == NULL)
+    {
+        I_Error("Couldn't read file %s", name);
+    }
+
+    length = M_FileLength(handle);
+    
+    buf = Z_Malloc(length, PU_STATIC, NULL);
+    count = vfs_read(buf, 1, length, handle);
+    vfs_close(handle);
+    
+    if (count < length)
+    {
+        I_Error ("Couldn't read file %s", name);
+    }
+        
+    *buffer = buf;
+    return length;
+
+#endif
+
 }
 
 // Returns the path to a temporary file of the given name, stored

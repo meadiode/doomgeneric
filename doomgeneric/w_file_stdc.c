@@ -21,6 +21,9 @@
 #include "m_misc.h"
 #include "w_file.h"
 #include "z_zone.h"
+#include "vfs.h"
+
+#ifndef USE_VFS
 
 typedef struct
 {
@@ -28,14 +31,29 @@ typedef struct
     FILE *fstream;
 } stdc_wad_file_t;
 
+#else
+
+typedef struct
+{
+    wad_file_t wad;
+    VFS_FILE *fstream;
+} stdc_wad_file_t;
+
+#endif
+
 extern wad_file_class_t stdc_wad_file;
 
 static wad_file_t *W_StdC_OpenFile(char *path)
 {
     stdc_wad_file_t *result;
+    
+#ifndef USE_VFS
     FILE *fstream;
-
     fstream = fopen(path, "rb");
+#else
+    VFS_FILE *fstream;
+    fstream = vfs_open(path, "r");
+#endif
 
     if (fstream == NULL)
     {
@@ -59,7 +77,12 @@ static void W_StdC_CloseFile(wad_file_t *wad)
 
     stdc_wad = (stdc_wad_file_t *) wad;
 
+#ifndef USE_VFS
     fclose(stdc_wad->fstream);
+#else
+    vfs_close(stdc_wad->fstream);
+#endif
+
     Z_Free(stdc_wad);
 }
 
@@ -76,11 +99,16 @@ size_t W_StdC_Read(wad_file_t *wad, unsigned int offset,
 
     // Jump to the specified position in the file.
 
+#ifndef USE_VFS
     fseek(stdc_wad->fstream, offset, SEEK_SET);
 
     // Read into the buffer.
 
     result = fread(buffer, 1, buffer_len, stdc_wad->fstream);
+#else
+    vfs_seek(stdc_wad->fstream, offset, SEEK_SET);
+    result = vfs_read(buffer, 1, buffer_len, stdc_wad->fstream);
+#endif
 
     return result;
 }
